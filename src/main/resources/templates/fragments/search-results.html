@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+
+<div th:fragment="search-results (storageObjects)">
+
+    <table id="example" class="table table-bordered table-striped text-center px-2">
+        <thead>
+        <tr>
+            <th class="col-1">Icon</th>
+            <th class="col-8 text-start">Name</th>
+            <th class="col-1">Size</th>
+            <th class="col-1">Download</th>
+            <th class="col-1">Rename</th>
+            <th class="col-1">Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${storageObjects}">
+            <div th:insert="~{fragments/dialog-rename-folder}"></div>
+            <th:block th:switch="${#strings.toString(item.getType())}">
+                <div th:case="'FOLDER'">
+                    <td>
+                        <i class="bi bi-folder h5 text-secondary"></i>
+                    </td>
+                    <td class="text-start">
+                        <a th:href="@{/(path=${item.getPath()})}" th:text="${item.getName()}"></a>
+                    </td>
+                    <td>
+                        <i th:text="${item.getSize()==0?'Empty':item.getSize() + (item.getSize()==1?' object':' objects')}"></i>
+                    </td>
+                    <td>
+                        <a th:href="@{download-folder(path=${item.getPath()})}">
+                            <button type="button" class="btn btn-light text-success">
+                                <i class="bi bi-save"></i>
+                            </button>
+                        </a>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-light"
+                                th:data-bs-name="${item.getName()}"
+                                th:data-bs-path="${item.getPath()}"
+                                th:data-bs-redirect-path="${currentPath}"
+                                data-bs-toggle="modal" data-bs-target="#rename-folder">
+                            <i class="bi bi-pencil-square text-primary"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <form action="/delete-folder" method="POST">
+                            <input type="hidden" name="redirect-path" th:value="${currentPath}">
+                            <input type="hidden" name="folder-path" th:value="${item.getPath()}">
+                            <button type="submit" class="btn btn-light"><i class="bi bi-trash-fill text-danger"></i>
+                            </button>
+                        </form>
+                    </td>
+                </div>
+
+                <div th:case="*">
+                    <td>
+                        <i class="bi bi-file-binary h5 text-secondary"></i>
+                    </td>
+                    <td class="text-start">
+                        <a th:href="@{download(path=${item.getPath()})}" th:text="${item.getName()}"></a>
+                    </td>
+                    <td>
+                        <i th:text="${item.getSize() / 1024}  + ' KB'"></i>
+                    </td>
+                    <td>
+                        <a th:href="@{download(path=${item.getPath()})}">
+                            <button type="button" class="btn btn-light text-success">
+                                <i class="bi bi-cloud-download"></i>
+                            </button>
+                        </a>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-light"><i class="bi bi-pencil-square text-primary"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <form action="/delete-file" method="POST">
+                            <input type="hidden" name="parent-path" th:value="${currentPath}">
+                            <input type="hidden" name="file-name" th:value="${item.getName()}">
+                            <button type="submit" class="btn btn-light"><i class="bi bi-trash-fill text-danger"></i>
+                            </button>
+                        </form>
+                    </td>
+                </div>
+                <script>
+                    const renameFolderModal = document.getElementById('rename-folder')
+                    renameFolderModal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+
+                        const folderNameInput = renameFolderModal.querySelector('#folder-name');
+                        const pathInput = renameFolderModal.querySelector('#old-folder-path')
+                        const redirectPathInput = renameFolderModal.querySelector('#redirect-path')
+
+                        folderNameInput.value = button.getAttribute('data-bs-name');
+                        pathInput.value = button.getAttribute('data-bs-path');
+                        redirectPathInput.value = button.getAttribute('data-bs-redirect-path');
+                    })
+                </script>
+            </th:block>
+        </tr>
+        </tbody>
+    </table>
+</div>
