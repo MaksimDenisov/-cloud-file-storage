@@ -7,7 +7,7 @@ report:
 	./gradlew jacocoTestReport
 
 up:
-	docker-compose -f docker-compose-env.yml up -d
+	docker compose -f docker-compose-env.yml up -d
 
 run-dev:
 	docker-compose -f docker-compose-dev.yml up -d

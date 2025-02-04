@@ -42,6 +42,7 @@ public class MinioFileRepository implements FileRepository {
     private final MinioClient minioClient;
 
     private final String bucket;
+    private final MinioItemToStorageObjectMapper mapper =  new MinioItemToStorageObjectMapper();
 
     public MinioFileRepository(MinioClient minioClient, @Value("${app.bucket}") String bucket) {
         this.minioClient = minioClient;
@@ -72,7 +73,7 @@ public class MinioFileRepository implements FileRepository {
             Item item = interceptMinioExceptions(resultItem::get);
             String minioName = item.objectName();
             if (!minioName.equals(minioPath.getPathByMinio())) {
-                StorageObject object = toStorageObjects(minioPath, item);
+                StorageObject object = mapper.toStorageObject(minioPath, item);
                 if (object.isFolder()) {
                     object.setSize(getChildCount(new MinioPath(userId, object.getPath())));
                 }
@@ -175,16 +176,6 @@ public class MinioFileRepository implements FileRepository {
             throw new StorageObjectNotFoundException(String.format("%s not exist", minioPath.getPathByUser()));
         }
         return minioItems;
-    }
-
-    private StorageObject toStorageObjects(MinioPath minioPath, Item item) {
-        String minioName = item.objectName();
-        String path = minioName.replace(minioPath.getUserFolder(), "");
-        StorageObject object = new StorageObject(path);
-        if (!object.isFolder()) {
-            object.setSize(item.size());
-        }
-        return object;
     }
 
     private long getChildCount(MinioPath minioPath) {

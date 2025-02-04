@@ -2,8 +2,10 @@ package ru.denisovmaksim.cloudfilestorage.repository.miniorepository;
 
 
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
+@ToString
 class MinioPath {
     private final String userFolder;
     private final String pathByUser;

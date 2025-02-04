@@ -49,6 +49,7 @@ public class FileExplorerController {
         model.addAttribute("username", authentication.getName());
         model.addAttribute("breadcrumbs", fileService.getChainLinksFromPath(path));
         model.addAttribute("storageObjects", fileService.getContentOfDirectory(path));
+        //TODO Убрать так как у каждого объекта этот параметр будет одинаковым
         model.addAttribute("currentPath", path);
         return "file-explorer";
     }
