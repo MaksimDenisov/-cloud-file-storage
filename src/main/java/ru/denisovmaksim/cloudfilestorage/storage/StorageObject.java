@@ -1,6 +1,5 @@
 package ru.denisovmaksim.cloudfilestorage.storage;
 
-import io.minio.messages.Item;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -15,23 +14,60 @@ import java.util.function.Supplier;
 public class StorageObject {
     private String parentPath = "";
 
-    private String name;
+    private final String name;
 
-    private boolean folder;
+    private final boolean folder;
 
     @Setter
     private long size;
 
 
     private StorageObject(Builder builder) {
+        String path = builder.path;
+        this.folder = path.endsWith("/");
+        if (path.endsWith("/")) {
+            this.name = path.substring(path.lastIndexOf('/', path.length() - 2) + 1, path.length() - 1);
+            path = path.substring(0, path.length() - 1);
+        } else {
+            this.name = path.substring(path.lastIndexOf('/') + 1);
+        }
 
+        int lastSlashIndex = path.lastIndexOf('/');
+        this.parentPath = (lastSlashIndex != -1) ? path.substring(0, lastSlashIndex + 1) : "";
+
+        if (this.folder) {
+            this.size = (builder.folderSizeSupplier != null) ? builder.folderSizeSupplier.get() : 0L;
+        } else {
+            this.size = builder.size;
+        }
+    }
+
+    public String getPath() {
+        return parentPath + name + (isFolder() ? "/" : "");
     }
 
     static class Builder {
-         private Supplier<Long> folderSizeSupplier;
+        private final String path;
+        private long size = 0;
 
-        public Builder(Item item) {
+        private Supplier<Long> folderSizeSupplier;
 
+        Builder(String path) {
+            this.path = path;
+        }
+
+        public Builder withFolderSizeSupplier(Supplier<Long> folderSizeSupplier) {
+            this.folderSizeSupplier = folderSizeSupplier;
+            return this;
+        }
+
+        public Builder objectSize(long size) {
+            this.size = size;
+            return this;
+        }
+
+        public StorageObject build() {
+            return new StorageObject(this);
         }
     }
 
@@ -49,7 +85,5 @@ public class StorageObject {
         }
     }
 
-    public String getPath() {
-        return parentPath + name + (isFolder() ? "/" : "");
-    }
+
 }

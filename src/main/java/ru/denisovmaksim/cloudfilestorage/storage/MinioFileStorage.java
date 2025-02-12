@@ -65,13 +65,13 @@ public class MinioFileStorage {
         List<StorageObject> objects = new ArrayList<>();
         for (Result<Item> resultItem : resultItems) {
             Item item = MinioExceptionHandler.interceptMinioExceptions(resultItem::get);
-            String minioName = item.objectName();
-            if (minioPath.isNotSame(minioName)) {
-                String objectPath = minioPath.extractPathByUser(minioName);
-                StorageObject object = new StorageObject(objectPath);
-                // For a folder, the size is the number of objects it contains
-                long size = object.isFolder() ? getChildCount(new MinioPath(userId, objectPath)) : item.size();
-                object.setSize(size);
+            if (!minioPath.equalsMinioItem(item)) {
+                final String objectPath = minioPath.extractPathByUser(item.objectName());
+                StorageObject object = new StorageObject.Builder(objectPath)
+                        .objectSize(item.size())
+                        .withFolderSizeSupplier(
+                                () -> getChildCount(new MinioPath(userId, objectPath)))
+                        .build();
                 objects.add(object);
             }
         }
@@ -170,7 +170,7 @@ public class MinioFileStorage {
         return minioItems;
     }
 
-    private long getChildCount(MinioPath minioPath) {
+    private Long getChildCount(MinioPath minioPath) {
         Iterable<Result<Item>> minioItems = minioClient.listObjects(
                 ListObjectsArgs.builder()
                         .bucket(bucket)
