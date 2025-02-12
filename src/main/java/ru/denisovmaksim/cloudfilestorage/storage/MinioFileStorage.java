@@ -19,7 +19,6 @@ import ru.denisovmaksim.cloudfilestorage.exception.StorageObjectNotFoundExceptio
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,20 +61,19 @@ public class MinioFileStorage {
         log.info("Get objects from path = {} for user with id = {}", path, userId);
         MinioPath minioPath = new MinioPath(userId, path);
         Iterable<Result<Item>> resultItems = getMinioItems(minioPath, false);
-        List<StorageObject> objects = new ArrayList<>();
-        for (Result<Item> resultItem : resultItems) {
-            Item item = MinioExceptionHandler.interceptMinioExceptions(resultItem::get);
-            if (!minioPath.equalsMinioItem(item)) {
-                final String objectPath = minioPath.extractPathByUser(item.objectName());
-                StorageObject object = new StorageObject.Builder(objectPath)
-                        .objectSize(item.size())
-                        .withFolderSizeSupplier(
-                                () -> getChildCount(new MinioPath(userId, objectPath)))
-                        .build();
-                objects.add(object);
-            }
-        }
-        return objects;
+        List<Item> items = StreamSupport.stream(resultItems.spliterator(), false)
+                .map(item -> MinioExceptionHandler.interceptMinioExceptions(item::get))
+                .filter(item -> !minioPath.equalsMinioItem(item))
+                .toList();
+        return items.stream()
+                .map(item -> {
+                    final String objectPath = minioPath.extractPathByUser(item.objectName());
+                    return new StorageObject.Builder(objectPath)
+                            .objectSize(item.size())
+                            .withFolderSizeSupplier(
+                                    () -> getChildCount(new MinioPath(userId, objectPath)))
+                            .build();
+                }).toList();
     }
 
     public void renameFolder(Long userId, String path, String newFolderName) {
