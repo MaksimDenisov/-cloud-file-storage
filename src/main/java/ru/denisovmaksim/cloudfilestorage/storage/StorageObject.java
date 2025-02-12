@@ -1,9 +1,12 @@
 package ru.denisovmaksim.cloudfilestorage.storage;
 
+import io.minio.messages.Item;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.function.Supplier;
 
 
 @Getter
@@ -12,12 +15,25 @@ import lombok.extern.slf4j.Slf4j;
 public class StorageObject {
     private String parentPath = "";
 
-    private final String name;
+    private String name;
 
-    private final boolean folder;
+    private boolean folder;
 
     @Setter
     private long size;
+
+
+    private StorageObject(Builder builder) {
+
+    }
+
+    static class Builder {
+         private Supplier<Long> folderSizeSupplier;
+
+        public Builder(Item item) {
+
+        }
+    }
 
     StorageObject(String path) {
         this.folder = path.endsWith("/");
